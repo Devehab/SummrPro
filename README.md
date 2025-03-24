@@ -7,9 +7,13 @@
 
 SummrPro is an AI-powered YouTube content transformer that uses Google's Gemini 1.5 Pro model to generate professional summaries from YouTube videos. It extracts video transcripts and provides clear, concise summaries in either English or Arabic.
 
-<p align="center">
-  <img src="https://i.imgur.com/placeholder-image.png" alt="SummrPro Screenshot" width="80%">
-</p>
+<div align="center">
+  
+  ### 🎬 SummrPro Demo
+  
+  [📺 Watch Demo Video (MP4)](./demo.mp4)
+  
+</div>
 
 ## 📋 Table of Contents
 
