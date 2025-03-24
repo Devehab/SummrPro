@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SummrPro - AI-Powered YouTube Content Transformer</title>
+    
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Google Fonts - Tajawal for Arabic -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Global font setting - Tajawal for all languages */
+        body {
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        /* RTL support for Arabic */
+        .rtl {
+            direction: rtl;
+            text-align: right;
+        }
+        
+        /* Animation for the rocket icon */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* Animation for the spinner */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Professional document styling for summary content */
+        .document-style {
+            font-family: 'Tajawal', sans-serif;
+            line-height: 1.7;
+            color: #333;
+            font-size: 15px;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+        
+        .document-style h1 {
+            font-size: 1.4rem;
+            color: #1a365d;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.4rem;
+            clear: both;
+        }
+        
+        .document-style h2 {
+            font-size: 1.2rem;
+            color: #2c5282;
+            margin-top: 1.4rem;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            clear: both;
+        }
+        
+        .document-style h3 {
+            font-size: 1.1rem;
+            color: #2d3748;
+            margin-top: 1.2rem;
+            margin-bottom: 0.7rem;
+            font-weight: 600;
+            clear: both;
+        }
+        
+        .document-style p {
+            margin-bottom: 1rem;
+            text-align: justify;
+            max-width: 100%;
+            line-height: 1.7;
+        }
+        
+        .document-style ul, .document-style ol {
+            margin-bottom: 1.2rem;
+            margin-top: 0.6rem;
+            padding-left: 1.8rem;
+        }
+        
+        .document-style ul li, .document-style ol li {
+            margin-bottom: 0.6rem;
+            line-height: 1.6;
+        }
+        
+        .document-style ul li {
+            list-style-type: disc;
+        }
+        
+        .document-style ol li {
+            list-style-type: decimal;
+        }
+        
+        .document-style blockquote {
+            border-left: 3px solid #cbd5e0;
+            padding: 0.6rem 1rem;
+            font-style: italic;
+            color: #4a5568;
+            margin: 1.2rem 0;
+            background-color: #f9fafb;
+        }
+        
+        .document-style code {
+            background: #edf2f7;
+            padding: 0.2rem 0.3rem;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        
+        .document-style pre {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 1.2rem 0;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .document-style strong {
+            font-weight: 600;
+            color: #1a202c;
+        }
+        
+        .document-style em {
+            font-style: italic;
+        }
+        
+        /* For long unbroken words or URLs */
+        .document-style * {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+            max-width: 100%;
+        }
+        
+        /* RTL document styling */
+        .rtl.document-style {
+            text-align: right;
+            line-height: 1.8;
+        }
+        
+        .rtl.document-style p {
+            text-align: justify;
+        }
+        
+        .rtl.document-style blockquote {
+            border-left: none;
+            border-right: 3px solid #cbd5e0;
+            padding-left: 0;
+            padding-right: 1rem;
+        }
+        
+        .rtl.document-style ul, .rtl.document-style ol {
+            padding-left: 0;
+            padding-right: 1.8rem;
+        }
+        
+        /* Add space after sentences to improve readability in long paragraphs */
+        .document-style .sentence-spacing {
+            margin-right: 0.2em;
+        }
+        
+        /* Enhanced card styling */
+        .style-card {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            width: 220px;
+            height: 100px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .style-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-color: #d1d5db;
+        }
+        
+        .style-card input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        
+        /* Selected card styling */
+        .style-card.selected {
+            background-color: #f0f9ff;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+        
+        .style-card.selected .card-icon {
+            color: #3b82f6;
+        }
+        
+        .style-card.selected .card-title {
+            color: #1e40af;
+            font-weight: 600;
+        }
+        
+        .style-card.selected .card-desc {
+            color: #1e3a8a;
+        }
+        
+        /* Language selector styling */
+        .language-option {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            min-width: 120px;
+        }
+        
+        .language-option:hover {
+            background-color: #f9fafb;
+        }
+        
+        .language-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        
+        .language-option.selected {
+            background-color: #f0f9ff;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+        
+        .language-option .lang-icon {
+            margin-right: 0.5rem;
+            font-size: 1rem;
+            color: #6b7280;
+        }
+        
+        .language-option.selected .lang-icon {
+            color: #3b82f6;
+        }
+        
+        .language-option.selected .lang-name {
+            color: #1e40af;
+            font-weight: 600;
+        }
+        
+        /* Progress bar animation */
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+            background: linear-gradient(90deg, #4f46e5, #818cf8);
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+        
+        .progress-container {
+            position: relative;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .progress-label {
+            position: absolute;
+            right: 0;
+            top: -1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #4b5563;
+            transition: all 0.3s ease;
+        }
+        
+        .progress-status-icon {
+            margin-right: 0.5rem;
+            color: #6366f1;
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-10">
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl font-bold text-indigo-800 mb-2 flex items-center">
+                    <i class="fas fa-robot text-indigo-600 mr-2"></i>
+                    SummrPro
+                </h1>
+                <div class="text-sm text-gray-500">AI-Powered YouTube Content Transformer</div>
+            </div>
+        </header>
+        
+        <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+            <div class="mb-6">
+                <label for="youtube-url" class="block mb-2 text-lg font-medium text-gray-700">
+                    <i class="fab fa-youtube text-red-600 mr-2"></i>Enter YouTube URL
+                </label>
+                <div class="flex">
+                    <input type="text" id="youtube-url" class="flex-1 px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="https://www.youtube.com/watch?v=...">
+                    <button id="paste-btn" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 border-l-0 rounded-r-md flex items-center transition">
+                        <i class="fas fa-paste mr-1"></i>Paste
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-700 mb-3">
+                    <i class="fas fa-language text-indigo-500 mr-1"></i> Preferred Language
+                </h3>
+                <div class="flex space-x-4 rtl:space-x-reverse">
+                    <label class="language-option selected" id="ar-option">
+                        <input type="radio" name="language" value="ar" class="hidden" checked>
+                        <i class="fas fa-globe-africa lang-icon"></i>
+                        <span class="lang-name">العربية</span>
+                    </label>
+                    <label class="language-option" id="en-option">
+                        <input type="radio" name="language" value="en" class="hidden">
+                        <i class="fas fa-globe-americas lang-icon"></i>
+                        <span class="lang-name">English</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-700 mb-3">
+                    <i class="fas fa-magic text-indigo-500 mr-1"></i> Content Style
+                </h3>
+                <div class="flex flex-wrap gap-4">
+                    <label class="style-card selected" id="standard-option">
+                        <input type="radio" name="style" value="standard" class="hidden" checked>
+                        <div class="card-content">
+                            <i class="fas fa-list-ul text-indigo-500 card-icon"></i>
+                            <span class="card-title">Summary</span>
+                            <p class="card-desc">Clear, concise summary with key points</p>
+                        </div>
+                    </label>
+                    <label class="style-card" id="teacher-option">
+                        <input type="radio" name="style" value="teacher" class="hidden">
+                        <div class="card-content">
+                            <i class="fas fa-chalkboard-teacher text-green-500 card-icon"></i>
+                            <span class="card-title">Teacher Style</span>
+                            <p class="card-desc">Explained as a professional teacher would</p>
+                        </div>
+                    </label>
+                    <label class="style-card" id="article-option">
+                        <input type="radio" name="style" value="article" class="hidden">
+                        <div class="card-content">
+                            <i class="fas fa-newspaper text-blue-500 card-icon"></i>
+                            <span class="card-title">Professional Article</span>
+                            <p class="card-desc">Formatted as a polished professional article</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <button id="summarize-btn" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-75 transition-colors">
+                    <i class="fas fa-magic mr-2"></i>Transform Content
+                </button>
+            </div>
+
+            <div id="progress-container" class="hidden mt-4 mb-6 progress-container">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-indigo-700 flex items-center">
+                        <i class="fas fa-cog fa-spin progress-status-icon"></i>
+                        <span>Processing</span>
+                    </span>
+                    <span id="progress-percentage" class="progress-label text-indigo-700">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div id="progress-bar" class="progress-bar h-3 rounded-full" style="width: 0%"></div>
+                </div>
+                <div id="progress-status" class="text-xs text-gray-600 mt-2 font-medium">Initializing...</div>
+            </div>
+
+            <div id="summary-container" class="mt-8 hidden">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center justify-between">
+                    <span><i class="fas fa-file-alt mr-2 text-indigo-600"></i>Transformed Content</span>
+                    <button id="copy-btn" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-md flex items-center border border-gray-300">
+                        <i class="far fa-copy mr-1.5"></i>Copy to Clipboard
+                    </button>
+                </h2>
+                <div id="source-info" class="mb-3 text-sm hidden">
+                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <span id="source-message">Summary based on video metadata (not transcript)</span>
+                    </span>
+                </div>
+                <div id="summary-content" class="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm"></div>
+            </div>
+        </div>
+        
+        <footer class="mt-12 text-center text-gray-600 text-sm">
+            <p>SummrPro &copy; <span id="currentYear">2025</span> - YouTube Content Transformer</p>
+            <p class="mt-2">Developed by <a href="https://github.com/Devehab" class="text-indigo-600 hover:text-indigo-800 transition" target="_blank">Ehab Kahwati</a></p>
+            <p class="mt-1">
+                <a href="https://github.com/Devehab/subtube" class="text-indigo-600 hover:text-indigo-800 transition" target="_blank">
+                    <i class="fab fa-github mr-1"></i>Contribute on GitHub
+                </a>
+            </p>
+            <p class="mt-3 text-xs text-gray-500">Licensed under <a href="https://www.gnu.org/licenses/gpl-3.0.en.html" class="text-gray-600 hover:text-gray-800 transition" target="_blank">GNU General Public License v3.0</a></p>
+        </footer>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const summarizeBtn = document.getElementById('summarize-btn');
+                const urlInput = document.getElementById('youtube-url');
+                const pasteBtn = document.getElementById('paste-btn');
+                const progressContainer = document.getElementById('progress-container');
+                const progressPercentage = document.getElementById('progress-percentage');
+                const progressBar = document.getElementById('progress-bar');
+                const progressStatus = document.getElementById('progress-status');
+                const summaryContainer = document.getElementById('summary-container');
+                const summaryContent = document.getElementById('summary-content');
+                const sourceInfo = document.getElementById('source-info');
+                const sourceMessage = document.getElementById('source-message');
+                const copyBtn = document.getElementById('copy-btn');
+                
+                // Update copyright year
+                document.getElementById('currentYear').textContent = new Date().getFullYear();
+                
+                // Function to extract YouTube video ID from URL
+                function extractVideoId(url) {
+                    // Regular expressions to match different YouTube URL formats
+                    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+                    const match = url.match(regExp);
+                    return (match && match[7].length === 11) ? match[7] : null;
+                }
+                
+                // Enhanced progress update function
+                function updateProgress(message, percentage) {
+                    progressStatus.textContent = message;
+                    progressBar.style.width = `${percentage}%`;
+                    progressPercentage.textContent = `${percentage}%`;
+                    progressContainer.classList.remove('hidden');
+                }
+                
+                // Handle paste button click
+                pasteBtn.addEventListener('click', async function() {
+                    try {
+                        // Clear the input field
+                        urlInput.value = '';
+                        
+                        // Get text from clipboard
+                        const text = await navigator.clipboard.readText();
+                        
+                        // Paste into the input field
+                        urlInput.value = text;
+                        
+                        // Focus on the input
+                        urlInput.focus();
+                    } catch (err) {
+                        console.error('Failed to read clipboard:', err);
+                        alert('Unable to access clipboard. Please paste the URL manually.');
+                    }
+                });
+                
+                summarizeBtn.addEventListener('click', async function() {
+                    const youtubeUrl = urlInput.value.trim();
+                    if (!youtubeUrl) {
+                        alert('Please enter a YouTube URL');
+                        return;
+                    }
+                    
+                    // Save original button text
+                    const originalBtnText = summarizeBtn.innerHTML;
+                    
+                    // Reset and show progress bar
+                    progressBar.style.width = '0%';
+                    progressContainer.classList.remove('hidden');
+                    progressPercentage.textContent = '0%';
+                    progressStatus.textContent = 'Initializing...';
+                    
+                    // Animate progress bar
+                    let currentProgress = 0;
+                    const progressInterval = setInterval(() => {
+                        // Increment slower at the beginning, faster in the middle, and slower at the end
+                        if (currentProgress < 20) {
+                            currentProgress += 0.5;
+                        } else if (currentProgress < 60) {
+                            currentProgress += 1;
+                        } else if (currentProgress < 90) {
+                            currentProgress += 0.5;
+                        } else if (currentProgress < 95) {
+                            currentProgress += 0.1;
+                        }
+                        
+                        if (currentProgress >= 95) {
+                            clearInterval(progressInterval);
+                        }
+                        
+                        progressBar.style.width = `${currentProgress}%`;
+                        progressPercentage.textContent = `${Math.round(currentProgress)}%`;
+                        
+                        // Update status message based on progress
+                        if (currentProgress < 20) {
+                            progressStatus.textContent = 'Fetching video information...';
+                        } else if (currentProgress < 40) {
+                            progressStatus.textContent = 'Extracting transcript...';
+                        } else if (currentProgress < 70) {
+                            progressStatus.textContent = 'Analyzing content...';
+                        } else if (currentProgress < 90) {
+                            progressStatus.textContent = 'Generating summary...';
+                        } else {
+                            progressStatus.textContent = 'Finalizing...';
+                        }
+                    }, 100);
+                    
+                    const language = document.querySelector('input[name="language"]:checked').value;
+                    const style = document.querySelector('input[name="style"]:checked').value;
+                    
+                    try {
+                        // Disable the button and show loading state
+                        summarizeBtn.disabled = true;
+                        summarizeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+                        
+                        // Extract video ID from URL
+                        const videoId = extractVideoId(youtubeUrl);
+                        if (!videoId) {
+                            alert('Invalid YouTube URL');
+                            summarizeBtn.disabled = false;
+                            summarizeBtn.innerHTML = originalBtnText;
+                            clearInterval(progressInterval);
+                            return;
+                        }
+                        
+                        // Fetch summary data from server
+                        const response = await fetch('/summarize', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                youtube_url: youtubeUrl,
+                                language: language,
+                                style: style
+                            }),
+                        });
+                        
+                        // Update UI with the summary
+                        const data = await response.json();
+                        if (response.ok) {
+                            let formattedSummary = data.summary;
+                            
+                            // Convert markdown-style content to HTML with improved formatting
+                            // First sanitize the content to handle unexpected formatting
+                            formattedSummary = formattedSummary
+                                // Clean up any stray formatting characters at the beginning
+                                .replace(/^\s*[\*\_\#\-\`]+\s*/, '')
+                                // Fix multiple consecutive line breaks
+                                .replace(/\n{3,}/g, '\n\n');
+                                
+                            // Process Markdown in a specific order to prevent conflicts
+                            
+                            // 1. First, handle code blocks (which might contain other markdown)
+                            formattedSummary = formattedSummary.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+                            
+                            // 2. Handle inline code
+                            formattedSummary = formattedSummary.replace(/`([^`]+)`/g, '<code>$1</code>');
+                            
+                            // 3. Handle headers (# symbols)
+                            formattedSummary = formattedSummary
+                                .replace(/^# (.*?)$/gm, '<h1>$1</h1>')
+                                .replace(/^## (.*?)$/gm, '<h2>$1</h2>')
+                                .replace(/^### (.*?)$/gm, '<h3>$1</h3>')
+                                .replace(/^#### (.*?)$/gm, '<h3>$1</h3>'); // treat h4 as h3 for consistency
+                            
+                            // 4. Process lists
+                            let listProcessed = formattedSummary;
+                            // First identify and wrap ul blocks
+                            const ulMatches = listProcessed.match(/(?:^|\n)- .+(?:\n- .+)*/g);
+                            if (ulMatches) {
+                                ulMatches.forEach(match => {
+                                    const listItems = match.trim().split('\n').map(item => {
+                                        return `<li>${item.replace(/^- /, '')}</li>`;
+                                    }).join('');
+                                    listProcessed = listProcessed.replace(match, `\n<ul>${listItems}</ul>\n`);
+                                });
+                            }
+                            
+                            // Then identify and wrap ol blocks
+                            const olMatches = listProcessed.match(/(?:^|\n)\d+\. .+(?:\n\d+\. .+)*/g);
+                            if (olMatches) {
+                                olMatches.forEach(match => {
+                                    const listItems = match.trim().split('\n').map(item => {
+                                        return `<li>${item.replace(/^\d+\. /, '')}</li>`;
+                                    }).join('');
+                                    listProcessed = listProcessed.replace(match, `\n<ol>${listItems}</ol>\n`);
+                                });
+                            }
+                            formattedSummary = listProcessed;
+                            
+                            // 5. Handle blockquotes
+                            formattedSummary = formattedSummary.replace(/^> (.*?)$/gm, '<blockquote>$1</blockquote>');
+                            
+                            // 6. Handle emphasis (bold/italic)
+                            formattedSummary = formattedSummary
+                                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                .replace(/__(.*?)__/g, '<strong>$1</strong>')
+                                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                                .replace(/_(.*?)_/g, '<em>$1</em>');
+                            
+                            // 7. Handle horizontal rules
+                            formattedSummary = formattedSummary.replace(/^---$/gm, '<hr>');
+                            
+                            // 8. Convert double newlines to paragraphs
+                            let withParagraphs = '';
+                            const paragraphs = formattedSummary.split(/\n\n+/);
+                            paragraphs.forEach(paragraph => {
+                                // Skip wrapping if it's already an HTML element
+                                if (!/^<(h[1-6]|ul|ol|li|blockquote|hr|pre)/.test(paragraph.trim()) && paragraph.trim().length > 0) {
+                                    // Split long paragraphs at sentence boundaries
+                                    const processed = paragraph
+                                        // Add proper spacing after periods, question marks, and exclamation points
+                                        .replace(/([.!?])\s+/g, '$1&nbsp; ')
+                                        // Add natural breaks for readability in long paragraphs
+                                        .replace(/([.!?])\s+([A-Z])/g, '$1</p><p>$2');
+                                    
+                                    withParagraphs += `<p>${processed}</p>\n\n`;
+                                } else {
+                                    withParagraphs += paragraph + '\n\n';
+                                }
+                            });
+                            formattedSummary = withParagraphs;
+                            
+                            // 9. Clean up any remaining stray markdown characters
+                            formattedSummary = formattedSummary
+                                .replace(/\*(?!\*)/g, '') // Remove stray asterisks
+                                .replace(/_(?!_)/g, '') // Remove stray underscores
+                                .replace(/#+/g, '') // Remove stray hashes
+                                .replace(/`/g, '') // Remove stray backticks
+                                .replace(/<p>\s*<\/p>/g, ''); // Remove empty paragraphs
+                            
+                            // 10. Final wrap and cleanup
+                            formattedSummary = '<div class="document-style">' + formattedSummary.trim() + '</div>';
+                            
+                            // Add RTL class if language is Arabic
+                            summaryContent.className = language === 'ar' ? 
+                                'bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm rtl' : 
+                                'bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm';
+                            
+                            // Show appropriate source info message
+                            sourceInfo.classList.remove('hidden');
+                            if (data.has_minimal_info) {
+                                if (language === 'ar') {
+                                    sourceMessage.textContent = 'لم يتم العثور على نص للفيديو. هذه معلومات عامة فقط.';
+                                    sourceInfo.classList.add('rtl');
+                                } else {
+                                    sourceMessage.textContent = 'No transcript found for this video. This is general information only.';
+                                    sourceInfo.classList.remove('rtl');
+                                }
+                                // Add a warning background color
+                                sourceInfo.querySelector('span').classList.remove('bg-yellow-100', 'text-yellow-800');
+                                sourceInfo.querySelector('span').classList.add('bg-red-100', 'text-red-800');
+                            } else if (!data.is_transcript) {
+                                if (language === 'ar') {
+                                    sourceMessage.textContent = 'تم إنشاء الملخص بناءً على بيانات الفيديو (وليس النص الكامل)';
+                                    sourceInfo.classList.add('rtl');
+                                } else {
+                                    sourceMessage.textContent = 'Summary based on video metadata (not transcript)';
+                                    sourceInfo.classList.remove('rtl');
+                                }
+                                // Reset to warning background
+                                sourceInfo.querySelector('span').classList.add('bg-yellow-100', 'text-yellow-800');
+                                sourceInfo.querySelector('span').classList.remove('bg-red-100', 'text-red-800');
+                            } else {
+                                // This is a transcript-based summary
+                                if (data.transcript_source === 'translated') {
+                                    // Show info about transcript being from another language
+                                    if (language === 'ar') {
+                                        sourceMessage.textContent = 'تم ترجمة النص من لغة أخرى باستخدام Gemini AI';
+                                        sourceInfo.classList.add('rtl');
+                                    } else {
+                                        sourceMessage.textContent = 'Transcript was in another language and translated by Gemini AI';
+                                        sourceInfo.classList.remove('rtl');
+                                    }
+                                    sourceInfo.querySelector('span').classList.remove('bg-red-100', 'text-red-800');
+                                    sourceInfo.querySelector('span').classList.add('bg-blue-100', 'text-blue-800');
+                                    sourceInfo.classList.remove('hidden');
+                                } else {
+                                    // It's a direct transcript in the user's language, no need for notification
+                                    sourceInfo.classList.add('hidden');
+                                }
+                            }
+                            
+                            summaryContent.innerHTML = formattedSummary;
+                            summaryContainer.classList.remove('hidden');
+                            
+                            // Complete the progress bar
+                            clearInterval(progressInterval);
+                            progressBar.style.width = '100%';
+                            progressPercentage.textContent = '100%';
+                            progressStatus.textContent = 'Complete!';
+                            
+                            // Reset the summarize button
+                            summarizeBtn.disabled = false;
+                            summarizeBtn.innerHTML = originalBtnText;
+                            
+                            // After a delay, hide the progress bar
+                            setTimeout(() => {
+                                progressContainer.classList.add('hidden');
+                            }, 2000);
+                        } else {
+                            // Reset the summarize button
+                            summarizeBtn.disabled = false;
+                            summarizeBtn.innerHTML = originalBtnText;
+                            
+                            progressContainer.classList.add('hidden');
+                            alert('Error: ' + (data.error || 'Failed to summarize video'));
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        
+                        // Reset the summarize button
+                        summarizeBtn.disabled = false;
+                        summarizeBtn.innerHTML = originalBtnText;
+                        
+                        progressContainer.classList.add('hidden');
+                        alert('An error occurred. Please try again.');
+                        
+                        // Stop the progress animation
+                        clearInterval(progressInterval);
+                    }
+                });
+                
+                copyBtn.addEventListener('click', function() {
+                    const range = document.createRange();
+                    range.selectNode(summaryContent);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                    document.execCommand('copy');
+                    window.getSelection().removeAllRanges();
+                    
+                    const originalText = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalText;
+                    }, 2000);
+                });
+                
+                // Style card selection
+                document.querySelectorAll('.style-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        // Remove selected class from all cards
+                        document.querySelectorAll('.style-card').forEach(c => {
+                            c.classList.remove('selected');
+                        });
+                        // Add selected class to the clicked card
+                        this.classList.add('selected');
+                    });
+                });
+                
+                // Language selection
+                document.querySelectorAll('.language-option').forEach(option => {
+                    option.addEventListener('click', function() {
+                        // Remove selected class from all options
+                        document.querySelectorAll('.language-option').forEach(o => {
+                            o.classList.remove('selected');
+                        });
+                        // Add selected class to the clicked option
+                        this.classList.add('selected');
+                    });
+                });
+                
+                // Set up event listeners for radio buttons
+                document.querySelectorAll('input[name="language"]').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const langOptions = document.querySelectorAll('.language-option');
+                        langOptions.forEach(option => {
+                            if (option.querySelector('input').value === this.value) {
+                                option.classList.add('selected');
+                            } else {
+                                option.classList.remove('selected');
+                            }
+                        });
+                    });
+                });
+                
+                document.querySelectorAll('input[name="style"]').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const styleCards = document.querySelectorAll('.style-card');
+                        styleCards.forEach(card => {
+                            if (card.querySelector('input').value === this.value) {
+                                card.classList.add('selected');
+                            } else {
+                                card.classList.remove('selected');
+                            }
+                        });
+                    });
+                });
+            });
+        </script>
+    </body>
+</html>
