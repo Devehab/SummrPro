@@ -57,7 +57,13 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip3 install -r requirements.txt
 ```
 
-4. Run the application:
+4. Set up environment variables:
+```bash
+# Create a .env file in the project root
+echo "GEMINI_API_KEY=your_gemini_api_key_here" > .env
+```
+
+5. Run the application:
 ```bash
 python3 app.py
 ```
@@ -67,23 +73,28 @@ python3 app.py
 #### Using Docker directly:
 1. Build the Docker image:
 ```bash
-docker build -t summrpro:latest .
+docker build -t devehab/summrpro:latest .
 ```
 
-2. Run the container:
+2. Run the container with your API key:
 ```bash
-docker run -p 5003:5003 summrpro:latest
+docker run -p 5003:5003 -e GEMINI_API_KEY=your_gemini_api_key_here devehab/summrpro:latest
 ```
 
 3. Access the application: Open your browser and navigate to http://localhost:5003
 
 #### Using Docker Compose:
-1. Start the service:
+1. Create a .env file with your Gemini API key:
+```bash
+echo "GEMINI_API_KEY=your_gemini_api_key_here" > .env
+```
+
+2. Start the service:
 ```bash
 docker-compose up -d
 ```
 
-2. Access the application: Open your browser and navigate to http://localhost:5003
+3. Access the application: Open your browser and navigate to http://localhost:5003
 
 3. Stop the service:
 ```bash
@@ -102,7 +113,7 @@ docker-compose down
 ## 🔧 Requirements
 
 - Python 3.9 or higher
-- Google Gemini API key (stored in .env file)
+- Google Gemini API key (get one from [Google AI Studio](https://ai.google.dev/))
 - Internet connection for accessing YouTube and the Gemini API
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 

@@ -8,6 +8,9 @@ services:
     environment:
       - FLASK_ENV=production  # Example: Set environment variables if needed
       - FLASK_APP=app.py
+      - GEMINI_API_KEY=${GEMINI_API_KEY}  # Pass the API key from host environment
+    env_file:
+      - .env  # Load environment variables from .env file
     networks:
       - app-network
 
