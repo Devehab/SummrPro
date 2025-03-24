@@ -12,6 +12,8 @@ SummrPro is an AI-powered YouTube content transformer that uses Google's Gemini 
   
   ### 🎬 SummrPro Demo
   
+  https://github.com/devehab/summrpro/raw/main/demo.mp4
+
   <a href="./demo.mp4" title="Download SummrPro Demo Video">
     <img src="https://img.shields.io/badge/🎥_Watch_Demo-Download_MP4-blue?style=for-the-badge" alt="Download Demo Video">
   </a>
