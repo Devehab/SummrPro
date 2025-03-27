@@ -4,7 +4,7 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Flask](https://img.shields.io/badge/Flask-2.0+-green.svg)](https://flask.palletsprojects.com/)
 [![Gemini AI](https://img.shields.io/badge/AI-Gemini%201.5%20Pro-purple.svg)](https://ai.google.dev/)
-[![Docker Image](https://img.shields.io/badge/Docker-v1.0.0-blue.svg)](https://hub.docker.com/r/devehab/summrpro)
+[![Docker Image](https://img.shields.io/badge/Docker-v1.0.1-blue.svg)](https://hub.docker.com/r/devehab/summrpro)
 
 SummrPro is an AI-powered YouTube content transformer that uses Google's Gemini 1.5 Pro model to generate professional summaries from YouTube videos. It extracts video transcripts and provides clear, concise summaries in either English or Arabic.
 
@@ -29,6 +29,7 @@ SummrPro is an AI-powered YouTube content transformer that uses Google's Gemini 
 - [📋 How to Use](#-how-to-use)
 - [🔧 Requirements](#-requirements)
 - [🧰 Development](#-development)
+- [📝 Changelog](#-changelog)
 - [🤝 Contributing](#-contributing)
 - [📜 License](#-license)
 - [👨‍💻 Author](#-author)
@@ -43,6 +44,8 @@ SummrPro is an AI-powered YouTube content transformer that uses Google's Gemini 
 - **YouTube Integration**: Direct processing of YouTube video transcripts
 - **Clear Section Breakdown**: Well-organized summaries with proper formatting
 - **Technical Term Explanations**: AI identifies and explains complex concepts
+- **Robust Error Handling**: User-friendly error messages with troubleshooting tips
+- **Modern UI**: Responsive design with intuitive visual feedback
 
 ## 🚀 Installation & Usage
 
@@ -84,15 +87,26 @@ You can run SummrPro using Docker with our pre-built image:
 
 ```bash
 # Pull the latest stable Docker image
-docker pull devehab/summrpro:v1.0.0
+docker pull devehab/summrpro:v1.0.1
 
 # Run the container
-docker run -p 5003:5003 -e GEMINI_API_KEY=$GEMINI_API_KEY devehab/summrpro:v1.0.0
+docker run -p 5003:5003 -e GEMINI_API_KEY=$GEMINI_API_KEY devehab/summrpro:v1.0.1
 ```
 
 Alternatively, you can use Docker Compose:
 
 ```bash
+# Create a docker-compose.yml file with the following content:
+version: '3'
+services:
+  summrpro:
+    image: devehab/summrpro:v1.0.1
+    ports:
+      - "5003:5003"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+
 # Make sure your .env file contains GEMINI_API_KEY
 docker-compose up
 ```
@@ -108,7 +122,8 @@ docker run -p 5003:5003 -e GEMINI_API_KEY=$GEMINI_API_KEY devehab/summrpro:lates
 ```
 
 #### Available Docker Tags
-- `v1.0.0` - Stable release with multi-platform support (linux/amd64, linux/arm64)
+- `v1.0.1` - Latest stable release with enhanced error handling and UI improvements
+- `v1.0.0` - Initial stable release with multi-platform support (linux/amd64, linux/arm64)
 - `latest` - Latest build from the main branch
 
 ## 📋 How to Use
@@ -136,6 +151,38 @@ SummrPro is built with the following technologies:
 - **AI**: Google's Gemini 1.5 Pro model via the Google Generative AI Python library
 - **API**: youtube_transcript_api for fetching YouTube subtitles
 - **Containerization**: Docker for cross-platform deployment
+
+## 📝 Changelog
+
+### v1.0.1 (March 27, 2025)
+
+#### Enhanced Error Handling
+- Added structured error codes and messages for various error scenarios
+- Improved error handling in the summarize endpoint
+- Enhanced error handling in the Gemini API integration
+- Added detailed error logging with traceback information
+
+#### UI Improvements
+- Redesigned header with modern gradient background and improved layout
+- Added user-friendly error messages with troubleshooting tips
+- Implemented warning containers for non-critical issues
+- Enhanced progress indicators with icons and better status messages
+- Improved language selection with culturally relevant icons
+- Added proper spacing between UI elements for better readability
+- Fixed error message display to prevent confusion
+
+#### Performance Improvements
+- Added timeout handling for network requests
+- Improved transcript extraction reliability
+- Enhanced metadata fallback when transcripts are unavailable
+
+### v1.0.0 (Initial Release)
+- Basic summarization functionality
+- Multi-language support (English and Arabic)
+- Multiple summary styles
+- YouTube transcript extraction
+- Copy to clipboard functionality
+- Docker containerization
 
 ## 🤝 Contributing
 

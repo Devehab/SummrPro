@@ -1,11 +1,12 @@
 import os
+import re
+import requests
+import json
+import traceback
 from flask import Flask, render_template, request, jsonify
-from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
-from youtube_transcript_api.formatters import TextFormatter
+from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, VideoUnavailable, NoTranscriptFound
 import google.generativeai as genai
 from dotenv import load_dotenv
-import requests
-import re
 
 # Load environment variables
 load_dotenv()
@@ -19,13 +20,80 @@ model = genai.GenerativeModel('gemini-1.5-pro')
 
 app = Flask(__name__)
 
+# Error codes and messages
+ERROR_CODES = {
+    "INVALID_URL": {"code": "E001", "message": "Invalid YouTube URL format. Please check the URL and try again."},
+    "NO_TRANSCRIPT": {"code": "E002", "message": "No transcript available for this video. We'll try to summarize based on video metadata."},
+    "VIDEO_UNAVAILABLE": {"code": "E003", "message": "This video is unavailable or may be private/restricted."},
+    "GEMINI_API_ERROR": {"code": "E004", "message": "Error connecting to Gemini API. Please check your API key or try again later."},
+    "NETWORK_ERROR": {"code": "E005", "message": "Network error occurred. Please check your internet connection and try again."},
+    "METADATA_EXTRACTION_ERROR": {"code": "E006", "message": "Could not extract video metadata. The video might be unavailable or restricted."},
+    "GENERAL_ERROR": {"code": "E999", "message": "An unexpected error occurred. Please try again later."}
+}
+
 def extract_video_id(youtube_url):
     """Extract the video ID from a YouTube URL."""
-    if "youtu.be" in youtube_url:
-        return youtube_url.split("/")[-1].split("?")[0]
-    elif "youtube.com" in youtube_url:
-        if "v=" in youtube_url:
-            return youtube_url.split("v=")[1].split("&")[0]
+    # تنظيف الرابط من أي مسافات
+    youtube_url = youtube_url.strip()
+    
+    # أنماط مختلفة من روابط YouTube
+    patterns = [
+        # youtu.be/VIDEO_ID
+        r'youtu\.be\/([a-zA-Z0-9_-]{11})',
+        # youtube.com/watch?v=VIDEO_ID
+        r'youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})',
+        # youtube.com/v/VIDEO_ID
+        r'youtube\.com\/v\/([a-zA-Z0-9_-]{11})',
+        # youtube.com/embed/VIDEO_ID
+        r'youtube\.com\/embed\/([a-zA-Z0-9_-]{11})',
+        # m.youtube.com/watch?v=VIDEO_ID
+        r'm\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})',
+        # youtube.com/shorts/VIDEO_ID
+        r'youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})'
+    ]
+    
+    # البحث عن معرف الفيديو باستخدام الأنماط المختلفة
+    for pattern in patterns:
+        match = re.search(pattern, youtube_url)
+        if match:
+            return match.group(1)
+    
+    # إذا كان الرابط يحتوي على v= ولكن لم يتم العثور عليه بالأنماط السابقة
+    if "v=" in youtube_url:
+        try:
+            # استخراج معرف الفيديو من الرابط بعد v=
+            video_id = youtube_url.split("v=")[1]
+            # إزالة أي معلمات إضافية بعد معرف الفيديو
+            if "&" in video_id:
+                video_id = video_id.split("&")[0]
+            # التحقق من أن معرف الفيديو صالح (11 حرفًا)
+            if len(video_id) == 11:
+                return video_id
+        except:
+            pass
+    
+    # إذا كان الرابط يحتوي على /v/ ولكن لم يتم العثور عليه بالأنماط السابقة
+    if "/v/" in youtube_url:
+        try:
+            video_id = youtube_url.split("/v/")[1]
+            if "?" in video_id:
+                video_id = video_id.split("?")[0]
+            if len(video_id) == 11:
+                return video_id
+        except:
+            pass
+    
+    # إذا كان الرابط يحتوي على youtu.be/ ولكن لم يتم العثور عليه بالأنماط السابقة
+    if "youtu.be/" in youtube_url:
+        try:
+            video_id = youtube_url.split("youtu.be/")[1]
+            if "?" in video_id:
+                video_id = video_id.split("?")[0]
+            if len(video_id) == 11:
+                return video_id
+        except:
+            pass
+    
     return None
 
 def extract_video_title(youtube_url):
@@ -253,8 +321,18 @@ def summarize_with_gemini(text, language="en", is_transcript=True, video_id=None
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        print(f"Error with Gemini API: {str(e)}")
-        return f"Error generating summary: {str(e)}"
+        error_details = traceback.format_exc()
+        print(f"Error with Gemini API: {str(e)}\n{error_details}")
+        
+        # Create a user-friendly error message
+        if "quota" in str(e).lower():
+            return "Error: Gemini API quota exceeded. Please try again later or check your API key limits."
+        elif "key" in str(e).lower():
+            return "Error: Invalid or missing Gemini API key. Please check your API key configuration."
+        elif "content" in str(e).lower() and "blocked" in str(e).lower():
+            return "Error: The content was blocked by Gemini API safety settings. The video may contain sensitive or restricted content."
+        else:
+            return f"Error generating summary: {str(e)}"
 
 @app.route('/')
 def index():
@@ -262,77 +340,167 @@ def index():
 
 @app.route('/summarize', methods=['POST'])
 def summarize():
-    data = request.json
-    youtube_url = data.get('youtube_url')
-    language = data.get('language', 'en')
-    style = data.get('style', 'standard')
-    
-    video_id = extract_video_id(youtube_url)
-    if not video_id:
-        return jsonify({'error': 'Invalid YouTube URL'}), 400
-    
-    # Try to get the transcript
-    transcript = get_youtube_transcript(video_id, language)
-    
-    if transcript:
-        # We have a transcript, summarize it
-        summary = summarize_with_gemini(transcript, language, is_transcript=True, style=style)
-        return jsonify({
-            'summary': summary, 
-            'is_transcript': True, 
-            'has_minimal_info': False,
-            'transcript_source': 'direct'
-        })
-    
-    # No direct transcript available, try to get video metadata
     try:
-        # Get video info from YouTube
-        video_url = f'https://www.youtube.com/watch?v={video_id}'
-        response = requests.get(video_url)
-        html_content = response.text
+        data = request.json
+        youtube_url = data.get('youtube_url')
+        language = data.get('language', 'en')
+        style = data.get('style', 'standard')
         
-        # Extract title
-        title_match = re.search(r'<title>(.*?) - YouTube</title>', html_content)
-        title = title_match.group(1) if title_match else 'Unknown Title'
-        
-        # Extract description
-        desc_match = re.search(r'"description":{"simpleText":"(.*?)"}', html_content)
-        description = desc_match.group(1) if desc_match else ''
-        
-        # Clean up description (remove escape characters)
-        description = description.replace('\\n', '\n').replace('\\', '')
-        
-        # Removed character limit - use full description
-        
-        # Build metadata text
-        metadata_text = f"Video Title: {title}\n\nVideo Description: {description}"
-        
-        # Use metadata for summarization if we have enough information
-        if len(metadata_text) > 100:  # At least some meaningful content
-            summary = summarize_with_gemini(metadata_text, language, is_transcript=False, style=style)
+        video_id = extract_video_id(youtube_url)
+        if not video_id:
             return jsonify({
-                'summary': summary, 
-                'is_transcript': False, 
-                'has_minimal_info': False
-            })
-        else:
-            # If we don't have enough metadata, generate a minimal info message
-            summary = summarize_with_gemini(None, language, is_transcript=False, video_id=video_id, style=style)
-            return jsonify({
-                'summary': summary, 
-                'is_transcript': False, 
-                'has_minimal_info': True
-            })
+                'error': ERROR_CODES["INVALID_URL"]["message"],
+                'error_code': ERROR_CODES["INVALID_URL"]["code"],
+                'error_type': 'invalid_url'
+            }), 400
+        
+        # Try to get the transcript
+        try:
+            transcript = get_youtube_transcript(video_id, language)
             
+            if transcript:
+                # We have a transcript, summarize it
+                summary = summarize_with_gemini(transcript, language, is_transcript=True, style=style)
+                
+                # Check if the summary contains error message
+                if summary.startswith("Error:"):
+                    return jsonify({
+                        'error': summary,
+                        'error_code': ERROR_CODES["GEMINI_API_ERROR"]["code"],
+                        'error_type': 'gemini_api_error'
+                    }), 500
+                
+                return jsonify({
+                    'summary': summary, 
+                    'is_transcript': True, 
+                    'has_minimal_info': False,
+                    'transcript_source': 'direct'
+                })
+        except VideoUnavailable:
+            return jsonify({
+                'error': ERROR_CODES["VIDEO_UNAVAILABLE"]["message"],
+                'error_code': ERROR_CODES["VIDEO_UNAVAILABLE"]["code"],
+                'error_type': 'video_unavailable'
+            }), 400
+        except Exception as e:
+            print(f"Transcript error: {str(e)}")
+            # Continue to metadata extraction
+        
+        # No direct transcript available, try to get video metadata
+        try:
+            # Get video info from YouTube
+            video_url = f'https://www.youtube.com/watch?v={video_id}'
+            response = requests.get(video_url, timeout=10)
+            
+            if response.status_code != 200:
+                return jsonify({
+                    'error': ERROR_CODES["VIDEO_UNAVAILABLE"]["message"],
+                    'error_code': ERROR_CODES["VIDEO_UNAVAILABLE"]["code"],
+                    'error_type': 'video_unavailable'
+                }), 400
+                
+            html_content = response.text
+            
+            # Extract title
+            title_match = re.search(r'<title>(.*?) - YouTube</title>', html_content)
+            title = title_match.group(1) if title_match else 'Unknown Title'
+            
+            # Extract description
+            desc_match = re.search(r'"description":{"simpleText":"(.*?)"}', html_content)
+            description = desc_match.group(1) if desc_match else ''
+            
+            # Clean up description (remove escape characters)
+            description = description.replace('\\n', '\n').replace('\\', '')
+            
+            # Build metadata text
+            metadata_text = f"Video Title: {title}\n\nVideo Description: {description}"
+            
+            # Use metadata for summarization if we have enough information
+            if len(metadata_text) > 100:  # At least some meaningful content
+                summary = summarize_with_gemini(metadata_text, language, is_transcript=False, style=style)
+                
+                # Check if the summary contains error message
+                if summary.startswith("Error:"):
+                    return jsonify({
+                        'error': summary,
+                        'error_code': ERROR_CODES["GEMINI_API_ERROR"]["code"],
+                        'error_type': 'gemini_api_error'
+                    }), 500
+                
+                return jsonify({
+                    'summary': summary, 
+                    'is_transcript': False, 
+                    'has_minimal_info': False,
+                    'warning': ERROR_CODES["NO_TRANSCRIPT"]["message"],
+                    'warning_code': ERROR_CODES["NO_TRANSCRIPT"]["code"]
+                })
+            else:
+                # If we don't have enough metadata, generate a minimal info message
+                summary = summarize_with_gemini(None, language, is_transcript=False, video_id=video_id, style=style)
+                
+                # Check if the summary contains error message
+                if summary.startswith("Error:"):
+                    return jsonify({
+                        'error': summary,
+                        'error_code': ERROR_CODES["GEMINI_API_ERROR"]["code"],
+                        'error_type': 'gemini_api_error'
+                    }), 500
+                
+                return jsonify({
+                    'summary': summary, 
+                    'is_transcript': False, 
+                    'has_minimal_info': True,
+                    'warning': ERROR_CODES["NO_TRANSCRIPT"]["message"],
+                    'warning_code': ERROR_CODES["NO_TRANSCRIPT"]["code"]
+                })
+                
+        except requests.exceptions.RequestException as e:
+            print(f"Network error: {str(e)}")
+            return jsonify({
+                'error': ERROR_CODES["NETWORK_ERROR"]["message"],
+                'error_code': ERROR_CODES["NETWORK_ERROR"]["code"],
+                'error_type': 'network_error'
+            }), 500
+        except Exception as e:
+            print(f"Error gathering video info: {str(e)}")
+            traceback.print_exc()
+            
+            # If all else fails, generate a minimal info message
+            try:
+                summary = summarize_with_gemini(None, language, is_transcript=False, video_id=video_id, style=style)
+                
+                # Check if the summary contains error message
+                if summary.startswith("Error:"):
+                    return jsonify({
+                        'error': summary,
+                        'error_code': ERROR_CODES["GEMINI_API_ERROR"]["code"],
+                        'error_type': 'gemini_api_error'
+                    }), 500
+                
+                return jsonify({
+                    'summary': summary, 
+                    'is_transcript': False, 
+                    'has_minimal_info': True,
+                    'warning': ERROR_CODES["METADATA_EXTRACTION_ERROR"]["message"],
+                    'warning_code': ERROR_CODES["METADATA_EXTRACTION_ERROR"]["code"]
+                })
+            except Exception as inner_e:
+                print(f"Final error: {str(inner_e)}")
+                return jsonify({
+                    'error': ERROR_CODES["GENERAL_ERROR"]["message"],
+                    'error_code': ERROR_CODES["GENERAL_ERROR"]["code"],
+                    'error_type': 'general_error'
+                }), 500
+    
     except Exception as e:
-        print(f"Error gathering video info: {str(e)}")
-        # If all else fails, generate a minimal info message
-        summary = summarize_with_gemini(None, language, is_transcript=False, video_id=video_id, style=style)
+        print(f"Unexpected error: {str(e)}")
+        traceback.print_exc()
         return jsonify({
-            'summary': summary, 
-            'is_transcript': False, 
-            'has_minimal_info': True
-        })
+            'error': ERROR_CODES["GENERAL_ERROR"]["message"],
+            'error_code': ERROR_CODES["GENERAL_ERROR"]["code"],
+            'error_type': 'general_error',
+            'details': str(e)
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, port=5003)

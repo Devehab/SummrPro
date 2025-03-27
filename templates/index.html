@@ -44,6 +44,36 @@
             animation: spin 1s linear infinite;
         }
         
+        /* Error message styling */
+        .error-container {
+            border-left: 4px solid #e53e3e;
+            background-color: #fff5f5;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .warning-container {
+            border-left: 4px solid #ecc94b;
+            background-color: #fffff0;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* Error shake animation */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .shake {
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        
         /* Professional document styling for summary content */
         .document-style {
             font-family: 'Tajawal', sans-serif;
@@ -318,13 +348,22 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <header class="text-center mb-10">
-            <div class="flex justify-between items-center">
-                <h1 class="text-3xl font-bold text-indigo-800 mb-2 flex items-center">
-                    <i class="fas fa-robot text-indigo-600 mr-2"></i>
-                    SummrPro
-                </h1>
-                <div class="text-sm text-gray-500">AI-Powered YouTube Content Transformer</div>
+        <header class="mb-10 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg p-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <div class="bg-white p-3 rounded-full shadow-md mr-4">
+                        <i class="fas fa-robot text-indigo-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold">SummrPro</h1>
+                        <div class="text-indigo-100 mt-1">Transform YouTube Content with AI</div>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="bg-indigo-800 py-1 px-3 rounded-full text-xs font-medium shadow-sm flex items-center">
+                        <i class="fas fa-magic mr-1"></i> AI-Powered
+                    </span>
+                </div>
             </div>
         </header>
         
@@ -348,12 +387,12 @@
                 <div class="flex space-x-4 rtl:space-x-reverse">
                     <label class="language-option selected" id="ar-option">
                         <input type="radio" name="language" value="ar" class="hidden" checked>
-                        <i class="fas fa-globe-africa lang-icon"></i>
+                        <i class="fas fa-mosque lang-icon"></i>
                         <span class="lang-name">العربية</span>
                     </label>
                     <label class="language-option" id="en-option">
                         <input type="radio" name="language" value="en" class="hidden">
-                        <i class="fas fa-globe-americas lang-icon"></i>
+                        <i class="fas fa-landmark lang-icon"></i>
                         <span class="lang-name">English</span>
                     </label>
                 </div>
@@ -397,18 +436,20 @@
                 </button>
             </div>
 
-            <div id="progress-container" class="hidden mt-4 mb-6 progress-container">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-indigo-700 flex items-center">
-                        <i class="fas fa-cog fa-spin progress-status-icon"></i>
-                        <span>Processing</span>
-                    </span>
-                    <span id="progress-percentage" class="progress-label text-indigo-700">0%</span>
+            <div id="progress-container" class="hidden mt-6 mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-rocket fa-spin progress-status-icon text-blue-500 mr-2"></i>
+                    <span class="progress-status-text font-medium text-blue-700">Processing...</span>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div id="progress-bar" class="progress-bar h-3 rounded-full" style="width: 0%"></div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div class="progress-bar bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
                 </div>
-                <div id="progress-status" class="text-xs text-gray-600 mt-2 font-medium">Initializing...</div>
+                <div class="text-right mt-1">
+                    <span class="progress-percentage text-sm text-gray-600">0%</span>
+                </div>
+                <div class="mt-3 text-sm text-gray-600">
+                    <p>SummrPro is processing your video. This may take a few moments depending on the video length.</p>
+                </div>
             </div>
 
             <div id="summary-container" class="mt-8 hidden">
@@ -425,6 +466,10 @@
                     </span>
                 </div>
                 <div id="summary-content" class="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm"></div>
+            </div>
+            <div id="error-container" class="hidden mt-4 mb-6 error-container">
+                <i class="fas fa-exclamation-circle mr-2 text-red-600"></i>
+                <span id="error-message"></span>
             </div>
         </div>
         
@@ -453,6 +498,8 @@
                 const sourceInfo = document.getElementById('source-info');
                 const sourceMessage = document.getElementById('source-message');
                 const copyBtn = document.getElementById('copy-btn');
+                const errorContainer = document.getElementById('error-container');
+                const errorMessage = document.getElementById('error-message');
                 
                 // Update copyright year
                 document.getElementById('currentYear').textContent = new Date().getFullYear();
@@ -467,10 +514,32 @@
                 
                 // Enhanced progress update function
                 function updateProgress(message, percentage) {
-                    progressStatus.textContent = message;
+                    const progressBar = document.querySelector('.progress-bar');
+                    const progressText = document.querySelector('.progress-percentage');
+                    const progressStatus = document.querySelector('.progress-status-text');
+                    
+                    // Update the progress bar
                     progressBar.style.width = `${percentage}%`;
-                    progressPercentage.textContent = `${percentage}%`;
-                    progressContainer.classList.remove('hidden');
+                    progressText.textContent = `${percentage}%`;
+                    
+                    // Update the status message
+                    progressStatus.textContent = message;
+                    
+                    // Add a visual indicator for the current stage
+                    let icon = 'fa-cog';
+                    if (message.includes('Starting')) {
+                        icon = 'fa-rocket';
+                    } else if (message.includes('Extracting')) {
+                        icon = 'fa-file-alt';
+                    } else if (message.includes('Generating')) {
+                        icon = 'fa-brain';
+                    } else if (message.includes('Finalizing')) {
+                        icon = 'fa-check-circle';
+                    }
+                    
+                    // Update the icon
+                    const iconElement = document.querySelector('.progress-status-icon');
+                    iconElement.className = `fas ${icon} fa-spin progress-status-icon`;
                 }
                 
                 // Handle paste button click
@@ -496,73 +565,57 @@
                 summarizeBtn.addEventListener('click', async function() {
                     const youtubeUrl = urlInput.value.trim();
                     if (!youtubeUrl) {
-                        alert('Please enter a YouTube URL');
+                        errorContainer.classList.remove('hidden');
+                        errorMessage.textContent = 'Please enter a YouTube URL';
+                        urlInput.classList.add('border-red-500', 'shake');
+                        setTimeout(() => {
+                            urlInput.classList.remove('shake');
+                        }, 1000);
                         return;
                     }
                     
-                    // Save original button text
+                    // Hide any previous error messages
+                    errorContainer.classList.add('hidden');
+                    
+                    // Reset UI elements
+                    summaryContent.innerHTML = '';
+                    summaryContainer.classList.add('hidden');
+                    sourceInfo.classList.add('hidden');
+                    
+                    // Store the original button text
                     const originalBtnText = summarizeBtn.innerHTML;
                     
-                    // Reset and show progress bar
-                    progressBar.style.width = '0%';
+                    // Show progress container
                     progressContainer.classList.remove('hidden');
-                    progressPercentage.textContent = '0%';
-                    progressStatus.textContent = 'Initializing...';
                     
-                    // Animate progress bar
-                    let currentProgress = 0;
-                    const progressInterval = setInterval(() => {
-                        // Increment slower at the beginning, faster in the middle, and slower at the end
-                        if (currentProgress < 20) {
-                            currentProgress += 0.5;
-                        } else if (currentProgress < 60) {
-                            currentProgress += 1;
-                        } else if (currentProgress < 90) {
-                            currentProgress += 0.5;
-                        } else if (currentProgress < 95) {
-                            currentProgress += 0.1;
-                        }
-                        
-                        if (currentProgress >= 95) {
-                            clearInterval(progressInterval);
-                        }
-                        
-                        progressBar.style.width = `${currentProgress}%`;
-                        progressPercentage.textContent = `${Math.round(currentProgress)}%`;
-                        
-                        // Update status message based on progress
-                        if (currentProgress < 20) {
-                            progressStatus.textContent = 'Fetching video information...';
-                        } else if (currentProgress < 40) {
-                            progressStatus.textContent = 'Extracting transcript...';
-                        } else if (currentProgress < 70) {
-                            progressStatus.textContent = 'Analyzing content...';
-                        } else if (currentProgress < 90) {
-                            progressStatus.textContent = 'Generating summary...';
-                        } else {
-                            progressStatus.textContent = 'Finalizing...';
-                        }
-                    }, 100);
+                    // Initialize progress animation
+                    let progress = 0;
+                    const progressBar = document.querySelector('.progress-bar');
+                    const progressText = document.querySelector('.progress-percentage');
+                    updateProgress('Starting process...', 5);
                     
-                    const language = document.querySelector('input[name="language"]:checked').value;
-                    const style = document.querySelector('input[name="style"]:checked').value;
+                    // Set up a progress animation
+                    let progressInterval = setInterval(() => {
+                        if (progress < 90) {
+                            progress += Math.random() * 3;
+                            updateProgress('Processing video...', Math.min(Math.round(progress), 90));
+                        }
+                    }, 1000);
                     
                     try {
                         // Disable the button and show loading state
                         summarizeBtn.disabled = true;
                         summarizeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
                         
-                        // Extract video ID from URL
-                        const videoId = extractVideoId(youtubeUrl);
-                        if (!videoId) {
-                            alert('Invalid YouTube URL');
-                            summarizeBtn.disabled = false;
-                            summarizeBtn.innerHTML = originalBtnText;
-                            clearInterval(progressInterval);
-                            return;
-                        }
+                        // Get selected language
+                        const language = document.querySelector('input[name="language"]:checked').value;
                         
-                        // Fetch summary data from server
+                        // Get selected style
+                        const style = document.querySelector('input[name="style"]:checked').value;
+                        
+                        updateProgress('Extracting video information...', 15);
+                        
+                        // Send request to the server
                         const response = await fetch('/summarize', {
                             method: 'POST',
                             headers: {
@@ -575,9 +628,38 @@
                             }),
                         });
                         
-                        // Update UI with the summary
+                        updateProgress('Generating summary...', 60);
+                        
                         const data = await response.json();
-                        if (response.ok) {
+                        
+                        // Stop the progress animation
+                        clearInterval(progressInterval);
+                        
+                        // Reset the summarize button regardless of outcome
+                        summarizeBtn.disabled = false;
+                        summarizeBtn.innerHTML = originalBtnText;
+                        
+                        // Hide progress container
+                        progressContainer.classList.add('hidden');
+                        
+                        if (response.ok && !data.error) {
+                            // Hide any error container that might be visible
+                            errorContainer.classList.add('hidden');
+                            
+                            // Check if there's a warning to display
+                            if (data.warning) {
+                                // Create warning message
+                                const warningDiv = document.createElement('div');
+                                warningDiv.className = 'warning-container mb-4';
+                                warningDiv.innerHTML = `
+                                    <div class="flex items-center">
+                                        <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
+                                        <span>${data.warning}</span>
+                                    </div>
+                                `;
+                                summaryContent.parentNode.insertBefore(warningDiv, summaryContent);
+                            }
+                            
                             let formattedSummary = data.summary;
                             
                             // Convert markdown-style content to HTML with improved formatting
@@ -744,7 +826,37 @@
                             summarizeBtn.innerHTML = originalBtnText;
                             
                             progressContainer.classList.add('hidden');
-                            alert('Error: ' + (data.error || 'Failed to summarize video'));
+                            
+                            // Display error message
+                            errorContainer.classList.remove('hidden');
+                            errorContainer.classList.add('shake');
+                            
+                            // Format the error message
+                            let errorText = '';
+                            if (data.error_code) {
+                                errorText = `<strong>Error ${data.error_code}:</strong> ${data.error}`;
+                            } else if (data.error) {
+                                errorText = data.error || 'Failed to summarize video';
+                            } else {
+                                errorText = 'An unexpected error occurred. Please try again later.';
+                            }
+                            
+                            // Add troubleshooting tips based on error type
+                            if (data.error_type === 'invalid_url') {
+                                errorText += '<br><br><strong>Troubleshooting:</strong> Make sure you\'ve entered a valid YouTube URL. Try copying the URL directly from your browser address bar.';
+                            } else if (data.error_type === 'video_unavailable') {
+                                errorText += '<br><br><strong>Troubleshooting:</strong> This video may be private, age-restricted, or removed. Try a different video.';
+                            } else if (data.error_type === 'gemini_api_error') {
+                                errorText += '<br><br><strong>Troubleshooting:</strong> There was an issue with the AI service. Please try again later or contact support.';
+                            } else if (data.error_type === 'network_error') {
+                                errorText += '<br><br><strong>Troubleshooting:</strong> Check your internet connection and try again.';
+                            }
+                            
+                            errorMessage.innerHTML = errorText;
+                            
+                            setTimeout(() => {
+                                errorContainer.classList.remove('shake');
+                            }, 1000);
                         }
                     } catch (error) {
                         console.error('Error:', error);
@@ -753,8 +865,20 @@
                         summarizeBtn.disabled = false;
                         summarizeBtn.innerHTML = originalBtnText;
                         
+                        // Hide progress container
                         progressContainer.classList.add('hidden');
-                        alert('An error occurred. Please try again.');
+                        
+                        // Only show error if we don't already have a summary displayed
+                        if (summaryContainer.classList.contains('hidden')) {
+                            // Display error message
+                            errorContainer.classList.remove('hidden');
+                            errorContainer.classList.add('shake');
+                            errorMessage.innerHTML = 'An unexpected error occurred. Please try again later.';
+                            
+                            setTimeout(() => {
+                                errorContainer.classList.remove('shake');
+                            }, 1000);
+                        }
                         
                         // Stop the progress animation
                         clearInterval(progressInterval);
